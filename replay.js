@@ -1,11 +1,16 @@
-const board = new Chessboard("board")
+const { Chessboard } = window.CmChessboard
+
+const board = new Chessboard(document.getElementById("board"))
 
 let chess = new Chess()
 let moves = []
 let clocks = []
 
-let whiteClock = document.getElementById("whiteClock")
-let blackClock = document.getElementById("blackClock")
+let whiteTime = 0
+let blackTime = 0
+
+const whiteClock = document.getElementById("whiteClock")
+const blackClock = document.getElementById("blackClock")
 
 function parseClock(clk){
 
@@ -21,46 +26,73 @@ return parts[0]*60 + parts[1]
 function formatClock(seconds){
 
 let m = Math.floor(seconds/60)
-let s = seconds%60
+let s = seconds % 60
 
 return `${m}:${s.toString().padStart(2,"0")}`
 
 }
 
-document.getElementById("pgnUpload").addEventListener("change",function(e){
+document.getElementById("pgnUpload").addEventListener("change", e => {
 
-let reader = new FileReader()
+const file = e.target.files[0]
 
-reader.onload = function(){
+const reader = new FileReader()
+
+reader.onload = () => {
 
 let pgn = reader.result
 
 chess.loadPgn(pgn)
 
-moves = chess.history({verbose:true})
+moves = chess.history({ verbose:true })
 
-let clkMatches = [...pgn.matchAll(/\[%clk\s+([^\]]+)\]/g)]
+const clkMatches = [...pgn.matchAll(/\[%clk\s+([^\]]+)\]/g)]
 
-clocks = clkMatches.map(m=>parseClock(m[1]))
+clocks = clkMatches.map(m => parseClock(m[1]))
+
+whiteTime = clocks[0]
+blackTime = clocks[1]
+
+whiteClock.textContent = formatClock(whiteTime)
+blackClock.textContent = formatClock(blackTime)
+
+console.log("PGN loaded")
+console.log("Moves:", moves.length)
 
 }
 
-reader.readAsText(e.target.files[0])
+reader.readAsText(file)
 
 })
 
+function sleep(ms){
+return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+async function runClock(color,seconds){
+
+for(let i=0;i<seconds;i++){
+
+await sleep(1000)
+
+if(color === "w"){
+whiteTime--
+whiteClock.textContent = formatClock(whiteTime)
+}
+else{
+blackTime--
+blackClock.textContent = formatClock(blackTime)
+}
+
+}
+
+}
+
 async function replay(){
 
-let game = new Chess()
+const game = new Chess()
 
-let moveIndex = 0
 let clockIndex = 0
-
-let wTime = clocks[0]
-let bTime = clocks[1]
-
-whiteClock.textContent = formatClock(wTime)
-blackClock.textContent = formatClock(bTime)
 
 for(const move of moves){
 
@@ -71,52 +103,21 @@ let nextClock = clocks[clockIndex]
 
 let thinkTime = Math.abs(prevClock - nextClock)
 
-let activeColor = move.color
-
-await runClock(activeColor, thinkTime)
+await runClock(move.color, thinkTime)
 
 game.move(move)
+
 board.setPosition(game.fen())
 
-if(activeColor === "w")
-wTime = nextClock
+if(move.color === "w")
+whiteTime = nextClock
 else
-bTime = nextClock
+blackTime = nextClock
 
-whiteClock.textContent = formatClock(wTime)
-blackClock.textContent = formatClock(bTime)
-
-}
+whiteClock.textContent = formatClock(whiteTime)
+blackClock.textContent = formatClock(blackTime)
 
 }
-
-function runClock(color,seconds){
-
-return new Promise(resolve=>{
-
-let remaining = seconds
-
-let interval = setInterval(()=>{
-
-remaining--
-
-if(color==="w"){
-let cur = parseClock(whiteClock.textContent)
-whiteClock.textContent = formatClock(cur-1)
-}
-else{
-let cur = parseClock(blackClock.textContent)
-blackClock.textContent = formatClock(cur-1)
-}
-
-if(remaining<=0){
-clearInterval(interval)
-resolve()
-}
-
-},1000)
-
-})
 
 }
 
