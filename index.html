@@ -35,7 +35,7 @@
     <button id="startBtn" disabled>Start</button>
     <button id="stopBtn" disabled>Stop</button>
   </div>
-
+  
   <div class="row">
     <div>White <span id="wClock" class="clock">--:--</span></div>
     <div>Black <span id="bClock" class="clock">--:--</span></div>
@@ -44,10 +44,7 @@
   <div id="board"></div>
   <div id="status">Upload a Chess.com PGN exported with timestamps.</div>
 
-  <!-- IMPORTANT: Use THIS exact UMD build. It defines window.Chess. -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.min.js"></script>
-
-  <!-- Your app code -->
-  <script src="replay.js?v=12"></script>
+  <script src="vendor/chess.js?v=1"></script>
+  <script src="replay.js?v=99"></script>
 </body>
 </html>
