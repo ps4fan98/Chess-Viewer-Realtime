@@ -1,56 +1,52 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
 <head>
-<meta charset="UTF-8">
+  <meta charset="utf-8" />
+  <title>Chess.com Realtime PGN Replay</title>
 
-<title>Chess Realtime Replay</title>
+  <!-- UMD browser build: creates global `Chess` -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.min.js"></script>
 
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
-
-<style>
-
-body{
-background:#111;
-color:white;
-font-family:Arial;
-text-align:center;
-}
-
-#board{
-width:420px;
-margin:30px auto;
-}
-
-.clock{
-font-size:28px;
-margin:10px;
-}
-
-</style>
-
+  <style>
+    body { background:#111; color:#fff; font-family:Arial, sans-serif; text-align:center; }
+    .row { display:flex; justify-content:center; gap:40px; margin:12px 0; align-items:center; }
+    .clock { font-size:28px; padding:8px 14px; background:#222; border-radius:10px; min-width:110px; display:inline-block; }
+    #status { opacity:0.85; margin-top:8px; font-size:14px; }
+    #board {
+      width: 420px; height: 420px;
+      margin: 18px auto;
+      display:grid;
+      grid-template-columns: repeat(8, 1fr);
+      border-radius: 10px;
+      overflow:hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .sq { display:flex; align-items:center; justify-content:center; font-size:34px; user-select:none; }
+    .light { background:#f0d9b5; }
+    .dark  { background:#b58863; }
+    button { padding:10px 14px; border-radius:10px; border:0; cursor:pointer; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    input { padding:6px; }
+  </style>
 </head>
 
 <body>
+  <h2>Chess.com Realtime PGN Replay</h2>
 
-<h2>Chess Realtime Replay</h2>
+  <div class="row">
+    <input type="file" id="pgnFile" accept=".pgn" />
+    <button id="startBtn" disabled>Start</button>
+    <button id="stopBtn" disabled>Stop</button>
+  </div>
 
-<input type="file" id="pgnFile">
+  <div class="row">
+    <div>White <span id="wClock" class="clock">--:--</span></div>
+    <div>Black <span id="bClock" class="clock">--:--</span></div>
+  </div>
 
-<div>
-White: <span id="whiteClock" class="clock">--:--</span>
-Black: <span id="blackClock" class="clock">--:--</span>
-</div>
+  <div id="board"></div>
+  <div id="status">Upload a Chess.com PGN exported with timestamps.</div>
 
-<div id="board"></div>
-
-<button id="startBtn">Start Replay</button>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
-
-<script src="replay.js"></script>
-
+  <script src="replay.js"></script>
 </body>
 </html>
