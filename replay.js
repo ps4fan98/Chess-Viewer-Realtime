@@ -7,13 +7,12 @@
   const bClockEl = document.getElementById("bClock");
   const boardEl  = document.getElementById("board");
 
-  // ---------- board rendering (no external board libs) ----------
   const pieceToUnicode = {
     p:"♟", r:"♜", n:"♞", b:"♝", q:"♛", k:"♚",
     P:"♙", R:"♖", N:"♘", B:"♗", Q:"♕", K:"♔"
   };
 
-  // build 64 squares once
+  // build board squares once
   const squares = [];
   boardEl.innerHTML = "";
   for (let r = 0; r < 8; r++) {
@@ -28,7 +27,7 @@
   function renderFen(fen) {
     const placement = fen.split(" ")[0];
     const ranks = placement.split("/");
-    let idx = 0; // squares array is rank 8 -> 1, file a -> h already
+    let idx = 0;
     for (const rank of ranks) {
       for (const ch of rank) {
         if (/\d/.test(ch)) {
@@ -41,28 +40,16 @@
     }
   }
 
-  // ---------- PGN + timing ----------
-  let chess = null;
-  let plies = [];        // verbose moves
-  let timestamps = [];   // seconds per ply (Chess.com: [%timestamp N])
-  let clocks = [];       // remaining time after ply (Chess.com: [%clk 0:09:56.1])
-  let wTime = 0;
-  let bTime = 0;
-  let stopRequested = false;
-
   function setStatus(msg) { statusEl.textContent = msg; }
 
-  function parseTimeControlSeconds(pgn) {
-    const m = pgn.match(/\[TimeControl\s+"([^"]+)"\]/);
-    if (!m) return null;
-    const tc = m[1].trim();          // e.g. "600" or "600+5"
-    const mm = tc.match(/^(\d+)(?:\+(\d+))?$/);
-    if (!mm) return null;
-    return parseInt(mm[1], 10);      // base seconds
+  function fmt(sec) {
+    sec = Math.max(0, Math.floor(sec));
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${String(s).padStart(2,"0")}`;
   }
 
   function parseClkToSeconds(clkStr) {
-    // clkStr like "0:09:56.1" or "9:56.1"
     const parts = clkStr.trim().split(":");
     if (parts.length === 3) {
       return parseInt(parts[0],10)*3600 + parseInt(parts[1],10)*60 + parseFloat(parts[2]);
@@ -73,14 +60,24 @@
     return parseFloat(parts[0]);
   }
 
-  function fmt(sec) {
-    sec = Math.max(0, Math.floor(sec));
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}:${String(s).padStart(2,"0")}`;
+  function parseTimeControlSeconds(pgn) {
+    const m = pgn.match(/\[TimeControl\s+"([^"]+)"\]/);
+    if (!m) return null;
+    const tc = m[1].trim(); // e.g. "600" or "600+5"
+    const mm = tc.match(/^(\d+)(?:\+(\d+))?$/);
+    if (!mm) return null;
+    return parseInt(mm[1], 10);
   }
 
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  let chess = null;
+  let plies = [];
+  let timestamps = [];
+  let clocks = [];
+  let wTime = 0;
+  let bTime = 0;
+  let stopRequested = false;
 
   async function runClock(color, seconds) {
     for (let i = 0; i < seconds; i++) {
@@ -103,46 +100,48 @@
 
   pgnFile.addEventListener("change", async (e) => {
     resetUI();
-    stopRequested = true; // stop any prior replay
+    stopRequested = true;
     stopRequested = false;
+
+    // If this fails, the page is still loading a module build somewhere else.
+    if (typeof window.Chess === "undefined") {
+      setStatus("ERROR: Chess library didn't load. Remove any other chess.js script tags and keep only cdnjs 0.13.4.");
+      console.error("window.Chess undefined");
+      return;
+    }
 
     const file = e.target.files?.[0];
     if (!file) return;
 
     const pgn = await file.text();
 
-    // Create chess instance and load PGN
-    chess = new Chess();
+    chess = new window.Chess();
     const ok = chess.load_pgn(pgn, { sloppy: true });
     if (!ok) {
-      setStatus("PGN failed to load. (Try exporting again from Chess.com Analysis > Share > PGN with clock.)");
+      setStatus("PGN failed to load. Export again from Chess.com with timestamps enabled.");
       return;
     }
 
-    // Get verbose plies (color included)
     plies = chess.history({ verbose: true });
 
-    // IMPORTANT: Chess.com may insert newlines => use \s+ not " "
+    // Chess.com can insert newlines inside these tags -> \s+
     timestamps = [...pgn.matchAll(/\[%timestamp\s+(\d+)\]/g)].map(m => parseInt(m[1],10));
     clocks     = [...pgn.matchAll(/\[%clk\s+([0-9:\.]+)\]/g)].map(m => parseClkToSeconds(m[1]));
 
-    // Init times: prefer TimeControl base (e.g. 600), else fall back to first seen clocks
     const base = parseTimeControlSeconds(pgn);
     wTime = base ?? clocks[0] ?? 0;
     bTime = base ?? clocks[1] ?? wTime;
 
-    // Reset position for display
     chess.reset();
     renderFen(chess.fen());
 
     wClockEl.textContent = fmt(wTime);
     bClockEl.textContent = fmt(bTime);
 
-    // Enable start if we have moves
     startBtn.disabled = plies.length === 0;
     stopBtn.disabled = true;
 
-    setStatus(`Loaded: plies=${plies.length}, timestamps=${timestamps.length}, clocks=${clocks.length}. (Your game should be plies=86)`);
+    setStatus(`Loaded: plies=${plies.length}, timestamps=${timestamps.length}, clocks=${clocks.length}`);
   });
 
   startBtn.addEventListener("click", async () => {
@@ -154,7 +153,6 @@
 
     chess.reset();
     renderFen(chess.fen());
-
     setStatus("Replaying…");
 
     for (let i = 0; i < plies.length; i++) {
@@ -163,15 +161,13 @@
       const ply = plies[i];
       const think = timestamps[i] ?? 0;
 
-      // tick down while thinking
       await runClock(ply.color, think);
       if (stopRequested) break;
 
-      // play move (use SAN already in verbose move)
       chess.move(ply.san, { sloppy: true });
       renderFen(chess.fen());
 
-      // snap clocks to Chess.com recorded remaining time (accounts for increment + tenths)
+      // snap to recorded remaining time (handles increment + tenths)
       const recorded = clocks[i];
       if (typeof recorded === "number") {
         if (ply.color === "w") wTime = recorded;
@@ -193,6 +189,5 @@
     setStatus("Stopping…");
   });
 
-  // initial UI
   resetUI();
 })();
