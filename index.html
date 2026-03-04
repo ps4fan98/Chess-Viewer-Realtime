@@ -4,9 +4,6 @@
   <meta charset="utf-8" />
   <title>Chess.com Realtime PGN Replay</title>
 
-  <!-- UMD browser build: creates global `Chess` -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.min.js"></script>
-
   <style>
     body { background:#111; color:#fff; font-family:Arial, sans-serif; text-align:center; }
     .row { display:flex; justify-content:center; gap:40px; margin:12px 0; align-items:center; }
@@ -47,6 +44,10 @@
   <div id="board"></div>
   <div id="status">Upload a Chess.com PGN exported with timestamps.</div>
 
-  <script src="replay.js"></script>
+  <!-- IMPORTANT: Use THIS exact UMD build. It defines window.Chess. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.min.js"></script>
+
+  <!-- Your app code -->
+  <script src="replay.js?v=12"></script>
 </body>
 </html>
