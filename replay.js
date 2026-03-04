@@ -3,7 +3,9 @@ const board = new Chessboard(document.getElementById("board"))
 
 let chess = new Chess()
 
-let moveData = []
+let moves = []
+let timestamps = []
+let clocks = []
 
 let whiteTime = 0
 let blackTime = 0
@@ -12,10 +14,14 @@ const whiteClock = document.getElementById("whiteClock")
 const blackClock = document.getElementById("blackClock")
 
 function formatClock(sec){
+
 sec = Math.max(0,Math.floor(sec))
+
 let m = Math.floor(sec/60)
 let s = sec%60
+
 return `${m}:${s.toString().padStart(2,"0")}`
+
 }
 
 function parseClock(clk){
@@ -38,15 +44,41 @@ return new Promise(r=>setTimeout(r,ms))
 document.getElementById("pgnUpload").addEventListener("change", e => {
 
 const file = e.target.files[0]
+
 const reader = new FileReader()
 
 reader.onload = () => {
 
 let pgn = reader.result
 
-parsePGN(pgn)
+/* load moves using chess.js */
 
-console.log("moves parsed:",moveData.length)
+chess.loadPgn(pgn)
+
+moves = chess.history()
+
+/* extract timestamps */
+
+timestamps = [...pgn.matchAll(/\[%timestamp ([0-9]+)\]/g)]
+.map(x => parseInt(x[1]))
+
+/* extract clocks */
+
+clocks = [...pgn.matchAll(/\[%clk ([0-9:\.]+)\]/g)]
+.map(x => parseClock(x[1]))
+
+/* initialize board */
+
+chess.reset()
+board.setPosition(chess.fen())
+
+whiteTime = clocks[0]
+blackTime = clocks[1]
+
+whiteClock.textContent = formatClock(whiteTime)
+blackClock.textContent = formatClock(blackTime)
+
+console.log("Moves loaded:",moves.length)
 
 }
 
@@ -54,39 +86,9 @@ reader.readAsText(file)
 
 })
 
-function parsePGN(pgn){
+async function runClock(color,seconds){
 
-moveData = []
-
-let regex = /([a-hKQRNB0O\-+=#]+)[^{}]*\{\[%clk ([^\]]+)\]\[%timestamp ([^\]]+)\]\}/g
-
-let match
-
-while((match = regex.exec(pgn)) !== null){
-
-moveData.push({
-move: match[1],
-clock: parseClock(match[2]),
-think: parseInt(match[3])
-})
-
-}
-
-if(moveData.length>0){
-
-whiteTime = moveData[0].clock
-blackTime = moveData[1]?.clock || moveData[0].clock
-
-whiteClock.textContent = formatClock(whiteTime)
-blackClock.textContent = formatClock(blackTime)
-
-}
-
-}
-
-async function runClock(color,time){
-
-for(let i=0;i<time;i++){
+for(let i=0;i<seconds;i++){
 
 await sleep(1000)
 
@@ -104,25 +106,23 @@ blackClock.textContent = formatClock(blackTime)
 
 async function replay(){
 
-chess.reset()
-
-for(let i=0;i<moveData.length;i++){
-
-let data = moveData[i]
+for(let i=0;i<moves.length;i++){
 
 let color = (i%2===0) ? "w" : "b"
 
-await runClock(color,data.think)
+let thinkTime = timestamps[i] || 0
 
-chess.move(data.move)
+await runClock(color,thinkTime)
+
+chess.move(moves[i])
 
 board.setPosition(chess.fen())
 
 if(color==="w"){
-whiteTime = data.clock
+whiteTime = clocks[i]
 whiteClock.textContent = formatClock(whiteTime)
 }else{
-blackTime = data.clock
+blackTime = clocks[i]
 blackClock.textContent = formatClock(blackTime)
 }
 
