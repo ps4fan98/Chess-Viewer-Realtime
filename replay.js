@@ -71,6 +71,17 @@
 
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+  function hasChessEngine() {
+    return typeof window.Chess === "function";
+  }
+
+  function showMissingChessError() {
+    setStatus("ERROR: Chess engine failed to load (window.Chess missing). Ensure index.html loads only vendor/chess.min.js as a classic script.");
+    startBtn.disabled = true;
+    stopBtn.disabled = true;
+    console.error("window.Chess is undefined. A module chess.js build may have been loaded by mistake.");
+  }
+
   let chess = null;
   let plies = [];
   let timestamps = [];
@@ -103,10 +114,8 @@
     stopRequested = true;
     stopRequested = false;
 
-    // If this fails, the page is still loading a module build somewhere else.
-    if (typeof window.Chess === "undefined") {
-      setStatus("ERROR: Chess library didn't load. Remove any other chess.js script tags and keep only cdnjs 0.13.4.");
-      console.error("window.Chess undefined");
+    if (!hasChessEngine()) {
+      showMissingChessError();
       return;
     }
 
@@ -141,7 +150,7 @@
     startBtn.disabled = plies.length === 0;
     stopBtn.disabled = true;
 
-    setStatus(`Loaded: plies=${plies.length}, timestamps=${timestamps.length}, clocks=${clocks.length}`);
+    setStatus(`Loaded: plies=${plies.length} timestamps=${timestamps.length} clocks=${clocks.length}`);
   });
 
   startBtn.addEventListener("click", async () => {
@@ -190,4 +199,7 @@
   });
 
   resetUI();
+  if (!hasChessEngine()) {
+    showMissingChessError();
+  }
 })();
