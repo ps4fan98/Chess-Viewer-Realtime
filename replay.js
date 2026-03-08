@@ -33,9 +33,17 @@
       for (const ch of rank) {
         if (/\d/.test(ch)) {
           const n = parseInt(ch, 10);
-          for (let i = 0; i < n; i++) squares[idx++].textContent = "";
+          for (let i = 0; i < n; i++) {
+            squares[idx].textContent = "";
+            squares[idx].classList.remove("piece", "piece-white", "piece-black");
+            idx++;
+          }
         } else {
-          squares[idx++].textContent = pieceToUnicode[ch] || "";
+          const sq = squares[idx++];
+          sq.textContent = pieceToUnicode[ch] || "";
+          sq.classList.add("piece");
+          sq.classList.toggle("piece-white", ch === ch.toUpperCase());
+          sq.classList.toggle("piece-black", ch === ch.toLowerCase());
         }
       }
     }
