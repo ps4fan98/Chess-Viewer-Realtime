@@ -5,29 +5,91 @@
   <title>Chess.com Realtime PGN Replay</title>
 
   <style>
-    body { background:#111; color:#fff; font-family:Arial, sans-serif; text-align:center; }
-    .row { display:flex; justify-content:center; gap:40px; margin:12px 0; align-items:center; }
-    .clock { font-size:28px; padding:8px 14px; background:#222; border-radius:10px; min-width:110px; display:inline-block; }
-    #status { opacity:0.85; margin-top:8px; font-size:14px; }
-    #board {
-      width: 420px; height: 420px;
-      margin: 18px auto;
-      display:grid;
-      grid-template-columns: repeat(8, 1fr);
-      border-radius: 10px;
-      overflow:hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-border: #2a2f3a;
+      --text: #f2f4f8;
+      --light: #f3dfc3;
+      --light-hi: #f8ead3;
+      --dark: #a97852;
+      --dark-hi: #b9875f;
     }
-    .sq { display:flex; align-items:center; justify-content:center; font-size:34px; user-select:none; }
-    .light { background:#f0d9b5; }
-    .dark  { background:#b58863; }
-    button { padding:10px 14px; border-radius:10px; border:0; cursor:pointer; }
+    body {
+      margin: 0;
+      padding: 24px 10px 32px;
+      background: radial-gradient(circle at 50% -20%, #22293a 0%, var(--bg) 58%);
+      color: var(--text);
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+      text-align: center;
+    }
+    h2 { margin: 4px 0 14px; letter-spacing: .2px; }
+    .panel {
+      width: min(760px, calc(100vw - 20px));
+      margin: 0 auto;
+      padding: 16px 16px 18px;
+      background: linear-gradient(180deg, #1a1f2a, var(--panel));
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      box-shadow: 0 12px 36px rgba(0,0,0,.35);
+    }
+    .row { display:flex; flex-wrap:wrap; justify-content:center; gap:14px 22px; margin:12px 0; align-items:center; }
+    .clock {
+      font-size: 28px;
+      font-variant-numeric: tabular-nums;
+      padding: 8px 14px;
+      background: #10131a;
+      border: 1px solid #2c3444;
+      border-radius: 10px;
+      min-width: 130px;
+      display: inline-block;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    #status { opacity: .92; margin-top: 8px; font-size: 14px; min-height: 20px; }
+    #board {
+      width: min(520px, calc(100vw - 80px));
+      aspect-ratio: 1 / 1;
+      margin: 18px auto 8px;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 10px solid #3f2d22;
+      box-shadow: 0 12px 30px rgba(0,0,0,.45), inset 0 0 0 2px #6a4a35;
+    }
+    .sq {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(24px, 5.2vw, 42px);
+      user-select: none;
+    }
+    .light { background: linear-gradient(135deg, var(--light-hi), var(--light)); }
+    .dark  { background: linear-gradient(135deg, var(--dark-hi), var(--dark)); }
+    .piece {
+      line-height: 1;
+      transform: translateY(1px);
+      text-shadow: 0 1px 0 rgba(0,0,0,.35), 0 2px 2px rgba(0,0,0,.25);
+    }
+    .piece-white {
+      color: #fffdf9;
+      -webkit-text-stroke: .8px rgba(40,40,40,.6);
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,.35));
+    }
+    .piece-black {
+      color: #1a1a1a;
+      -webkit-text-stroke: .8px rgba(255,255,255,.35);
+      filter: drop-shadow(0 1px 1px rgba(255,255,255,.08));
+    }
+    button { padding: 10px 14px; border-radius: 10px; border: 1px solid #3b4253; background:#202636; color:var(--text); cursor:pointer; }
     button:disabled { opacity:.5; cursor:not-allowed; }
-    input { padding:6px; }
+    input { padding: 7px; border-radius: 8px; border: 1px solid #3b4253; background:#10131a; color:var(--text); }
   </style>
 </head>
 
 <body>
+  <div class="panel">
   <h2>Chess.com Realtime PGN Replay</h2>
 
   <div class="row">
@@ -44,7 +106,9 @@
   <div id="board"></div>
   <div id="status">Upload a Chess.com PGN exported with timestamps.</div>
 
-  <script src="vendor/chess.js?v=1"></script>
-  <script src="replay.js?v=99"></script>
+  <!-- Local, non-module chess.js build for GitHub Pages compatibility -->
+  <script src="vendor/chess.min.js?v=2"></script>
+  <script src="replay.js?v=101"></script>
+</div>
 </body>
 </html>
