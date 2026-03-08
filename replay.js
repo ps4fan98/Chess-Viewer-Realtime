@@ -88,6 +88,17 @@
 
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+  function hasChessEngine() {
+    return typeof window.Chess === "function";
+  }
+
+  function showMissingChessError() {
+    setStatus("ERROR: Chess engine failed to load (window.Chess missing). Ensure index.html loads only vendor/chess.min.js as a classic script.");
+    startBtn.disabled = true;
+    stopBtn.disabled = true;
+    console.error("window.Chess is undefined. A module chess.js build may have been loaded by mistake.");
+  }
+
   let chess = null;
   let plies = [];
   let timestamps = [];
